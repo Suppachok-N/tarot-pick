@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เปิดไพ่ทาโรต์</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            text-align: center;
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+            max-width: 800px;
+            width: 100%;
+            border: 1px solid #333333;
+        }
+        h1 {
+            margin-top: 0;
+            color: #ffffff;
+            font-size: 1.8rem;
+        }
+        .table-area {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            gap: 50px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        .deck-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 180px;
+        }
+        .counter-box {
+            background-color: #2a2a2a;
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: 1px solid #444444;
+            font-size: 0.9rem;
+            font-weight: bold;
+            width: 100%;
+            margin-bottom: 35px;
+            color: #d4af37;
+        }
+        .deck-container {
+            position: relative;
+            width: 180px;
+            height: 280px;
+            margin-bottom: 15px;
+            perspective: 1000px;
+        }
+        .clickable-deck {
+            cursor: pointer;
+        }
+        .clickable-deck:hover .card-display {
+            border-color: #ffffff;
+            box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+        }
+        .deck-visual {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .deck-layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #252525, #1a1a1a);
+            border: 2px solid #555555;
+            border-radius: 10px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.6);
+        }
+        .discard-layer {
+            background: linear-gradient(135deg, #2f2f2f, #1f1f1f);
+        }
+        .card-display {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #222222;
+            border: 2px solid #555555;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            user-select: none;
+        }
+        .discard-display {
+            background-color: #252525;
+            display: none;
+        }
+        .card-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #d4af37;
+        }
+        .card-meaning {
+            font-size: 0.85rem;
+            color: #cccccc;
+            line-height: 1.4;
+        }
+        .placeholder-text {
+            color: #888888;
+            font-size: 0.9rem;
+            font-weight: bold;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        button {
+            background-color: #333333;
+            color: #ffffff;
+            border: 1px solid #555555;
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background-color: #444444;
+            transform: translateY(-2px);
+        }
+        .animating-card {
+            position: absolute;
+            width: 180px;
+            height: 280px;
+            z-index: 1000;
+            pointer-events: none;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+        .animating-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0.2, 0.2, 1);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            border: 2px solid #555555;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+            text-align: center;
+        }
+        .card-back {
+            background: linear-gradient(135deg, #252525, #1a1a1a);
+        }
+        .card-front {
+            background-color: #252525;
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>เปิดไพ่ทาโรต์</h1>
+    
+    <div class="table-area">
+        <div class="deck-section">
+            <div class="counter-box" id="drawCount">เหลือ: 78 ใบ</div>
+            <div class="deck-container clickable-deck" id="drawDeckContainer" onclick="drawCard()">
+                <div class="deck-visual" id="drawVisual"></div>
+                <div class="card-display" id="drawCardDisplay">
+                    <div class="placeholder-text">คลิกที่นี่เพื่อเปิดไพ่</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="deck-section" id="discardSection">
+            <div class="counter-box" id="discardCount">เปิดแล้ว: 0 ใบ</div>
+            <div class="deck-container">
+                <div class="deck-visual" id="discardVisual"></div>
+                <div class="card-display discard-display" id="discardCardDisplay">
+                    <div class="card-name" id="cardName"></div>
+                    <div class="card-meaning" id="cardMeaning"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button onclick="resetDeck()">สับไพ่ใหม่</button>
+    </div>
+</div>
+
+<script>
+    const initialTarotCards = [
+        { name: "0. The Fool", meaning: "การเริ่มต้นใหม่ อิสรภาพ การเสี่ยงโชค" },
+        { name: "I. The Magician", meaning: "ความสามารถ ทักษะ การสร้างสรรค์สิ่งใหม่" },
+        { name: "II. The High Priestess", meaning: "สัญชาตญาณ ความลึกลับ ความรู้สึกภายใน" },
+        { name: "III. The Empress", meaning: "ความอุดมสมบูรณ์ การเติบโต ความดูแลเอาใจใส่" },
+        { name: "IV. The Emperor", meaning: "อำนาจ ความเป็นผู้นำ ระเบียบวินัย" },
+        { name: "V. The Hierophant", meaning: "ประเพณี การเรียนรู้ ความเชื่อ ศีลธรรม" },
+        { name: "VI. The Lovers", meaning: "ความรัก ทางเลือก หุ้นส่วน ความสัมพันธ์" },
+        { name: "VII. The Chariot", meaning: "ความมุ่งมั่น การควบคุม ความสำเร็จเหนืออุปสรรค" },
+        { name: "VIII. Strength", meaning: "ความกล้าหาญ ความอดทน การควบคุมอารมณ์" },
+        { name: "IX. The Hermit", meaning: "การค้นหาตัวเอง ความสงบ การทบทวนภายใน" },
+        { name: "X. Wheel of Fortune", meaning: "การเปลี่ยนแปลง โชคชะตา วัฏจักรชีวิต" },
+        { name: "XI. Justice", meaning: "ความยุติธรรม ความจริง การตัดสินใจ" },
+        { name: "XII. The Hanged Man", meaning: "การยอมเสียสละ มุมมองใหม่ การหยุดรอ" },
+        { name: "XIII. Death", meaning: "จุดจบ การเปลี่ยนผ่าน การจบลงเพื่อเริ่มใหม่" },
+        { name: "XIV. Temperance", meaning: "การปรับตัว ความสมดุล การประนีประนอม" },
+        { name: "XV. The Devil", meaning: "การเสพติด ความลุ่มหลง กิเลส ตัณหา" },
+        { name: "XVI. The Tower", meaning: "การเปลี่ยนแปลงฉับพลัน วิกฤต ความสูญเสีย" },
+        { name: "XVII. The Star", meaning: "ความหวัง แรงบันดาลใจ ความเยียวยา" },
+        { name: "XVIII. The Moon", meaning: "ความวิตกกังวล ความไม่แน่นอน ภาพลวงตา" },
+        { name: "XIX. The Sun", meaning: "ความสุข ความสำเร็จ พลังงานบวก" },
+        { name: "XX. Judgement", meaning: "การตื่นรู้ การตระหนักรู้ การตัดสินใจครั้งสำคัญ" },
+        { name: "XXI. The World", meaning: "ความสมบูรณ์แบบ ความสำเร็จสูงสุด การบรรลุเป้าหมาย" },
+        { name: "Ace of Wands", meaning: "แรงบันดาลใจใหม่ โอกาสใหม่ พลังสร้างสรรค์" },
+        { name: "Two of Wands", meaning: "การวางแผนอนาคต การตัดสินใจ ความก้าวหน้า" },
+        { name: "Three of Wands", meaning: "การขยายโอกาส การมองการณ์ไกล การเดินทาง" },
+        { name: "Four of Wands", meaning: "การเฉลิมฉลอง ความมั่นคง ความสุขในครอบครัว" },
+        { name: "Five of Wands", meaning: "ความขัดแย้ง การแข่งขัน การถกเถียง" },
+        { name: "Six of Wands", meaning: "ชัยชนะ ความสำเร็จ การยอมรับจากผู้อื่น" },
+        { name: "Seven of Wands", meaning: "การปกป้องสิทธิ์ การยืนหยัดต่อสู้กับอุปสรรค" },
+        { name: "Eight of Wands", meaning: "ความรวดเร็ว ข้อมูลข่าวสาร การเดินทาง" },
+        { name: "Nine of Wands", meaning: "ความเหน็ดเหนื่อย การระมัดระวัง การอดทนสู้" },
+        { name: "Ten of Wands", meaning: "ภาระงานหนัก ความรับผิดชอบสูง ความกดดัน" },
+        { name: "Page of Wands", meaning: "ข่าวดี การเรียนรู้สิ่งใหม่ ความกระตือรือร้น" },
+        { name: "Knight of Wands", meaning: "การแอ็กชัน พลังงานเต็มเปี่ยม การเดินทางรวดเร็ว" },
+        { name: "Queen of Wands", meaning: "ความมั่นใจ มั่นคง ความมีเสน่ห์ และเป็นผู้นำ" },
+        { name: "King of Wands", meaning: "วิสัยทัศน์กว้างไกล การเป็นผู้นำ ความสำเร็จในธุรกิจ" },
+        { name: "Ace of Cups", meaning: "ความรักใหม่ อารมณ์ความรู้สึกที่ดี ความสุข" },
+        { name: "Two of Cups", meaning: "ความสัมพันธ์ที่ดี การหมั้นหมาย มิตรภาพ" },
+        { name: "Three of Cups", meaning: "การเฉลิมฉลอง งานเลี้ยง สังคม มิตรภาพ" },
+        { name: "Four of Cups", meaning: "ความเบื่อหน่าย การปฏิเสธโอกาส ข้อเสนอที่ไม่ถูกใจ" },
+        { name: "Five of Cups", meaning: "ความผิดหวัง เสียใจ การยึดติดกับสิ่งที่สูญเสีย" },
+        { name: "Six of Cups", meaning: "ความทรงจำเก่าๆ อดีต การหวนคืน หวนคิดถึง" },
+        { name: "Seven of Cups", meaning: "ตัวเลือกมากมาย ความเพ้อฝัน ภาพจินตนาการ" },
+        { name: "Eight of Cups", meaning: "การเดินละทิ้งอดีต ออกเดินทางค้นหาสิ่งใหม่" },
+        { name: "Nine of Cups", meaning: "ความพึงพอใจ ความสุขสมปรารถนา สมบูรณ์แบบ" },
+        { name: "Ten of Cups", meaning: "ความสุขในครอบครัว ความรักที่สมบูรณ์ ความอบอุ่น" },
+        { name: "Page of Cups", meaning: "ข้อเสนอใหม่ ความอ่อนโยน ข่าวเกี่ยวกับความรัก" },
+        { name: "Knight of Cups", meaning: "การเสนอความรัก การเทียบเชิญ ข้อเสนอโรแมนติก" },
+        { name: "Queen of Cups", meaning: "ความเห็นอกเห็นใจ อารมณ์อ่อนไหว สัญชาตญาณสูง" },
+        { name: "King of Cups", meaning: "การควบคุมอารมณ์ ความใจเย็น ความเห็นอกเห็นใจ" },
+        { name: "Ace of Swords", meaning: "ความคิดใหม่ ความชัดเจน การเอาชนะอุปสรรค" },
+        { name: "Two of Swords", meaning: "การตัดสินใจยาก การปิดตาไม่รับรู้ ความลังเล" },
+        { name: "Three of Swords", meaning: "ความอกหัก เสียใจ ความเจ็บปวดทางอารมณ์" },
+        { name: "Four of Swords", meaning: "การพักผ่อน การหยุดพักชั่วคราว การทำใจ" },
+        { name: "Five of Swords", meaning: "ความพ่ายแพ้ การเอาชนะที่ไม่คุ้มค่า ความขัดแย้ง" },
+        { name: "Six of Swords", meaning: "การผ่านพ้นวิกฤต การเยียวยา การก้าวผ่านความเดือดร้อน" },
+        { name: "Seven of Swords", meaning: "ความกลอุบาย การหลอกลวง การซ่อนเร้น" },
+        { name: "Eight of Swords", meaning: "ความรู้สึกถูกกักขัง ทางตัน ความคิดติดดัก" },
+        { name: "Nine of Swords", meaning: "ความวิตกกังวล นอนไม่หลับ ความเครียดสูง" },
+        { name: "Ten of Swords", meaning: "ความพ่ายแพ้ จุดจบที่เจ็บปวด ความล้มเหลว" },
+        { name: "Page of Swords", meaning: "การเฝ้าระวัง การสอดส่อง การพร้อมรับมือ" },
+        { name: "Knight of Swords", meaning: "ความใจร้อน ความเด็ดเดี่ยว การลุยไปข้างหน้า" },
+        { name: "Queen of Swords", meaning: "ความเด็ดขาด ปัญญา ความเป็นจริง ไม่ใช้อารมณ์" },
+        { name: "King of Swords", meaning: "ความเฉียบแหลม อำนาจการตัดสินใจ ความเป็นธรรม" },
+        { name: "Ace of Pentacles", meaning: "โอกาสทางการเงิน มรดก การเริ่มต้นธุรกิจ" },
+        { name: "Two of Pentacles", meaning: "การบริหารจัดการ ความยืดหยุ่น การหมุนเงิน" },
+        { name: "Three of Pentacles", meaning: "การทำงานร่วมกัน ทักษะฝีมือ ความเชี่ยวชาญ" },
+        { name: "Four of Pentacles", meaning: "การตระหนี่ การตระเตรียมความมั่นคง การยึดติด" },
+        { name: "Five of Pentacles", meaning: "ความยากลำบากทางการเงิน ความสูญเสีย ความรู้สึกโดดเดี่ยว" },
+        { name: "Six of Pentacles", meaning: "การแบ่งปัน การให้และรับ ความช่วยเหลือ" },
+        { name: "Seven of Pentacles", meaning: "การรอคอยผลลัพธ์ การลงทุนระยะยาว" },
+        { name: "Eight of Pentacles", meaning: "ความขยัน การฝึกฝนทักษะ การทำงานหนัก" },
+        { name: "Nine of Pentacles", meaning: "ความมั่งคั่ง อิสรภาพทางการเงิน ความสำเร็จ" },
+        { name: "Ten of Pentacles", meaning: "ความมั่นคงระยะยาว มรดก ความร่ำรวยของครอบครัว" },
+        { name: "Page of Pentacles", meaning: "โอกาสทางการเงินใหม่ๆ การเรียนรู้เรื่องเงิน" },
+        { name: "Knight of Pentacles", meaning: "ความขยัน อดทน มั่นคง วางแผนอย่างรอบคอบ" },
+        { name: "Queen of Pentacles", meaning: "ความใจดี การดูแลจัดการทรัพย์สิน ความอุดมสมบูรณ์" },
+        { name: "King of Pentacles", meaning: "ความสำเร็จทางการเงิน นักลงทุน ความมั่นคงสูงสุด" }
+    ];
+
+    let currentDeck = [...initialTarotCards];
+    let discardPile = [];
+    let isAnimating = false;
+
+    const drawVisual = document.getElementById("drawVisual");
+    const discardVisual = document.getElementById("discardVisual");
+    const drawCardDisplay = document.getElementById("drawCardDisplay");
+    const discardCardDisplay = document.getElementById("discardCardDisplay");
+    const drawCount = document.getElementById("drawCount");
+    const discardCount = document.getElementById("discardCount");
+    const drawDeckContainer = document.getElementById("drawDeckContainer");
+    const cardName = document.getElementById("cardName");
+    const cardMeaning = document.getElementById("cardMeaning");
+    const discardSection = document.getElementById("discardSection");
+
+    function renderLayers(container, count, layerClass = "deck-layer") {
+        container.innerHTML = "";
+        const layers = Math.min(Math.ceil((count / 78) * 15), count);
+        for (let i = 0; i < layers - 1; i++) {
+            const layer = document.createElement("div");
+            layer.className = layerClass;
+            layer.style.transform = `translateY(${-(i + 1) * 1.2}px)`;
+            layer.style.zIndex = i + 1;
+            container.appendChild(layer);
+        }
+        return layers;
+    }
+
+    function updateDecks() {
+        const drawLen = currentDeck.length;
+        const discardLen = discardPile.length;
+
+        drawCount.textContent = `เหลือ: ${drawLen} ใบ`;
+        discardCount.textContent = `เปิดแล้ว: ${discardLen} ใบ`;
+
+        if (drawLen === 0) {
+            drawCardDisplay.style.display = "none";
+            drawDeckContainer.style.cursor = "default";
+            drawVisual.innerHTML = "";
+        } else {
+            drawCardDisplay.style.display = "flex";
+            drawDeckContainer.style.cursor = "pointer";
+            const layers = renderLayers(drawVisual, drawLen);
+            drawCardDisplay.style.transform = `translateY(${-(layers - 1) * 1.2}px)`;
+            drawCardDisplay.style.zIndex = layers;
+        }
+
+        if (discardLen === 0) {
+            discardCardDisplay.style.display = "none";
+            discardVisual.innerHTML = "";
+        } else {
+            discardCardDisplay.style.display = "flex";
+            const layers = renderLayers(discardVisual, discardLen, "deck-layer discard-layer");
+            discardCardDisplay.style.transform = `translateY(${-(layers - 1) * 1.2}px)`;
+            discardCardDisplay.style.zIndex = layers;
+        }
+    }
+
+    function drawCard() {
+        if (currentDeck.length === 0 || isAnimating) return;
+
+        isAnimating = true;
+
+        const randomIndex = Math.floor(Math.random() * currentDeck.length);
+        const [selectedCard] = currentDeck.splice(randomIndex, 1);
+
+        const drawRect = drawCardDisplay.getBoundingClientRect();
+        const discardContainer = discardSection.querySelector('.deck-container');
+        const discardRect = discardContainer.getBoundingClientRect();
+
+        const drawLayers = Math.min(Math.ceil(((currentDeck.length + 1) / 78) * 15), currentDeck.length + 1);
+
+        const targetDiscardCount = discardPile.length + 1;
+        const targetLayers = Math.min(Math.ceil((targetDiscardCount / 78) * 15), targetDiscardCount);
+        const targetOffsetY = -(targetLayers - 1) * 1.2;
+
+        const deltaX = discardRect.left - drawRect.left;
+        const deltaY = (discardRect.top + targetOffsetY) - (drawRect.top);
+
+        const animCard = document.createElement("div");
+        animCard.className = "animating-card";
+        animCard.style.top = `${drawRect.top + window.scrollY}px`;
+        animCard.style.left = `${drawRect.left + window.scrollX}px`;
+
+        animCard.innerHTML = `
+            <div class="animating-card-inner" id="animInner">
+                <div class="card-face card-back"></div>
+                <div class="card-face card-front">
+                    <div class="card-name">${selectedCard.name}</div>
+                    <div class="card-meaning">${selectedCard.meaning}</div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(animCard);
+
+        const animInner = animCard.querySelector("#animInner");
+
+        requestAnimationFrame(() => {
+            animCard.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+            animInner.style.transform = "rotateY(180deg)";
+        });
+
+        setTimeout(() => {
+            discardPile.push(selectedCard);
+            cardName.textContent = selectedCard.name;
+            cardMeaning.textContent = selectedCard.meaning;
+            
+            updateDecks();
+            document.body.removeChild(animCard);
+            isAnimating = false;
+        }, 600);
+    }
+
+    function resetDeck() {
+        if (isAnimating) return;
+        currentDeck = [...initialTarotCards];
+        discardPile = [];
+        cardName.textContent = "";
+        cardMeaning.textContent = "";
+        updateDecks();
+    }
+
+    updateDecks();
+</script>
+
+</body>
+</html>
